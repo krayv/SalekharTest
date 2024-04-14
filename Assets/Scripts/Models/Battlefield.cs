@@ -11,16 +11,28 @@ namespace Scorewarrior.Test.Models
 
 		private bool _paused;
 
-		public Battlefield(Dictionary<uint, List<Vector3>> spawnPositionsByTeam)
-		{
-			_spawnPositionsByTeam = spawnPositionsByTeam;
-			_charactersByTeam = new Dictionary<uint, List<Character>>();
-		}
+        private EventBus _eventBus;
+
+		private readonly Dictionary<string, CharacterPrefab> _spawnedCharacters;
+
+        public Battlefield(Dictionary<uint, List<Vector3>> spawnPositionsByTeam, EventBus eventBus)
+        {
+            _spawnPositionsByTeam = spawnPositionsByTeam;
+            _charactersByTeam = new Dictionary<uint, List<Character>>();
+            _spawnedCharacters = new Dictionary<string, CharacterPrefab>();
+            _eventBus = eventBus;
+			_eventBus.NoAliveCharactersInTeam += OnNoAliveCharacters;
+        }
 
 		public void Start(CharacterPrefab[] prefabs)
 		{
 			_paused = false;
 			_charactersByTeam.Clear();
+
+			foreach (var character in _spawnedCharacters.Values)
+			{
+				character.gameObject.SetActive(false);
+			}
 
 			List<CharacterPrefab> availablePrefabs = new List<CharacterPrefab>(prefabs);
 			foreach (var positionsPair in _spawnPositionsByTeam)
@@ -32,7 +44,7 @@ namespace Scorewarrior.Test.Models
 				while (i < positions.Count && availablePrefabs.Count > 0)
 				{
 					int index = Random.Range(0, availablePrefabs.Count);
-					characters.Add(CreateCharacterAt(availablePrefabs[index], this, positions[i]));
+					characters.Add(CreateAndSetCharacterAt(availablePrefabs[index], this, positions[i]));
 					availablePrefabs.RemoveAt(index);
 					i++;
 				}
@@ -59,8 +71,13 @@ namespace Scorewarrior.Test.Models
 					}
 				}
 				target = nearestEnemy;
-				return target != null;
-			}
+                if (target == null)
+                {
+                    _eventBus.NoAliveCharactersInTeam.Invoke(team);
+                    return false;
+                }
+                return true;
+            }
 			target = default;
 			return false;
 		}
@@ -98,11 +115,32 @@ namespace Scorewarrior.Test.Models
 			}
 		}
 
-		private static Character CreateCharacterAt(CharacterPrefab prefab, Battlefield battlefield, Vector3 position)
+		private void OnNoAliveCharacters(uint team)
 		{
-			CharacterPrefab character = Object.Instantiate(prefab);
-			character.transform.position = position;
-			return new Character(character, new Weapon(character.Weapon), battlefield);
+			_eventBus.EndBattle.Invoke();
 		}
+
+		private static Character CreateAndSetCharacterAt(CharacterPrefab prefab, Battlefield battlefield, Vector3 position)
+		{
+			CharacterPrefab character;
+			if (battlefield._spawnedCharacters.ContainsKey(prefab.NameID))
+			{
+				character = battlefield._spawnedCharacters[prefab.NameID];
+				character.gameObject.SetActive(true);
+			}
+			else
+			{
+				character = Object.Instantiate(prefab);
+
+            }
+            battlefield._spawnedCharacters[character.NameID] = character;
+			return SetCharacterAt(character, battlefield, position);
+		}
+
+		private static Character SetCharacterAt(CharacterPrefab character, Battlefield battlefield, Vector3 position)
+		{
+            character.transform.position = position;
+			return new Character(character, new Weapon(character.Weapon), battlefield);
+        }
 	}
 }

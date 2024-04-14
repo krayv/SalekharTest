@@ -6,6 +6,7 @@ namespace Scorewarrior.Test.Views
 	{
 		public WeaponPrefab Weapon;
 		public Animator Animator;
+		public string NameID;
 
 		[SerializeField]
 		private Transform _rightPalm;
