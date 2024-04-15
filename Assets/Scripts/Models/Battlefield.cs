@@ -48,6 +48,7 @@ namespace Scorewarrior.Test.Models
 					availablePrefabs.RemoveAt(index);
 					i++;
 				}
+				_eventBus.SpawnCharacters.Invoke(characters);
 			}
 		}
 

@@ -1,6 +1,7 @@
 ﻿using Scorewarrior.Test.Descriptors;
 using Scorewarrior.Test.Views;
 using UnityEngine;
+using System;
 
 namespace Scorewarrior.Test.Models
 {
@@ -17,7 +18,6 @@ namespace Scorewarrior.Test.Models
         private readonly CharacterPrefab _prefab;
         private readonly Weapon _weapon;
         private readonly Battlefield _battlefield;
-        private readonly EventBus _eventBus;
 
         private float _health;
         private float _armor;
@@ -25,30 +25,83 @@ namespace Scorewarrior.Test.Models
         private State _state;
         private Character _currentTarget;
         private float _time;
+        private CharacterDescriptor _descriptor;
 
         public Character(CharacterPrefab prefab, Weapon weapon, Battlefield battlefield)
         {
             _prefab = prefab;
             _weapon = weapon;
             _battlefield = battlefield;
-            CharacterDescriptor descriptor = _prefab.GetComponent<CharacterDescriptor>();
-            _health = descriptor.MaxHealth;
-            _armor = descriptor.MaxArmor;
+            _descriptor = _prefab.GetComponent<CharacterDescriptor>();
+            _health = _descriptor.MaxHealth;
+            _armor = _descriptor.MaxArmor;
         }
 
         public bool IsAlive => _health > 0 || _armor > 0;
+        public uint Team
+        {
+            get
+            {
+                if (_battlefield.TryGetTeam(this, out uint team))
+                {
+                    return team;
+                }
+                return 0;
+            }
+        }
+
+        public float HealthPercent => Health / _descriptor.MaxHealth;
+        public float MaxHealth => _descriptor.MaxHealth;
+        public float ArmorPercent => Armor / _descriptor.MaxArmor;
+        public float MaxArmor => _descriptor.MaxArmor;
 
         public float Health
         {
-            get => _health;
-            set => _health = value;
+            get
+            {
+                return _health;
+            }
+            set
+            {
+                value = Mathf.Max(value, 0);
+                if (_health != value)
+                {                    
+                    _health = value; 
+                    OnHealthChanged?.Invoke(value);
+                }
+
+                if (!IsAlive)
+                {
+                    OnCharacterDeath?.Invoke();
+                }
+            }
         }
 
         public float Armor
         {
-            get => _armor;
-            set => _armor = value;
+            get 
+            {
+                return _armor; 
+            }
+            set 
+            {
+                value = Mathf.Max(value, 0);
+                if (_armor != value)
+                {                   
+                    _armor = value;
+                    OnArmorChanged?.Invoke(value);
+                }
+
+                if (!IsAlive)
+                {
+                    OnCharacterDeath?.Invoke();
+                }
+            }
         }
+
+        public Action<float> OnHealthChanged;
+        public Action<float> OnArmorChanged;
+        public Action OnCharacterDeath;
 
         public CharacterPrefab Prefab => _prefab;
         public Vector3 Position => _prefab.transform.position;
@@ -100,7 +153,7 @@ namespace Scorewarrior.Test.Models
                             {
                                 if (_weapon.IsReady)
                                 {
-                                    float random = Random.Range(0.0f, 1.0f);
+                                    float random = UnityEngine.Random.Range(0.0f, 1.0f);
                                     bool hit = random <= _prefab.GetComponent<CharacterDescriptor>().Accuracy &&
                                             random <= _weapon.Prefab.GetComponent<WeaponDescriptor>().Accuracy &&
                                             random >= _currentTarget.Prefab.GetComponent<CharacterDescriptor>().Dexterity;
