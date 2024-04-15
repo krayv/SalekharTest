@@ -2,6 +2,8 @@
 using Scorewarrior.Test.Views;
 using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Scorewarrior.Test.Models
 {
@@ -25,16 +27,27 @@ namespace Scorewarrior.Test.Models
         private State _state;
         private Character _currentTarget;
         private float _time;
-        private CharacterDescriptor _descriptor;
+        private CharacterModifiedDescriptor _descriptor;
+        private List<DescriptorModifier> _modifiers;
+
+        public CharacterModifiedDescriptor Descriptor => _descriptor;
+        public List<DescriptorModifier> Modifiers => _modifiers;
 
         public Character(CharacterPrefab prefab, Weapon weapon, Battlefield battlefield)
         {
             _prefab = prefab;
             _weapon = weapon;
             _battlefield = battlefield;
-            _descriptor = _prefab.GetComponent<CharacterDescriptor>();
-            _health = _descriptor.MaxHealth;
-            _armor = _descriptor.MaxArmor;
+            Descriptor descriptor = _prefab.GetComponent<CharacterDescriptor>();
+
+            _modifiers = DescriptorModifierWrap.LoadModifiers<CharacterModifier>().Select(m=> m as DescriptorModifier).ToList();
+            _modifiers = _modifiers.GetRandomElements(DescriptorModifierWrap.LoadModifierSettings().MaxCharacterModifiers);
+            DescriptorModifierWrap wrap = DescriptorModifierWrap.Wrap(_modifiers);
+            _descriptor = new CharacterModifiedDescriptor(descriptor, wrap);
+            weapon.AddModifiers(_modifiers);
+
+            _health = Descriptor.MaxHealth;
+            _armor = Descriptor.MaxArmor;          
         }
 
         public bool IsAlive => _health > 0 || _armor > 0;
@@ -50,10 +63,10 @@ namespace Scorewarrior.Test.Models
             }
         }
 
-        public float HealthPercent => Health / _descriptor.MaxHealth;
-        public float MaxHealth => _descriptor.MaxHealth;
-        public float ArmorPercent => Armor / _descriptor.MaxArmor;
-        public float MaxArmor => _descriptor.MaxArmor;
+        public float HealthPercent => Health / Descriptor.MaxHealth;
+        public float MaxHealth => Descriptor.MaxHealth;
+        public float ArmorPercent => Armor / Descriptor.MaxArmor;
+        public float MaxArmor => Descriptor.MaxArmor;
 
         public float Health
         {
@@ -119,7 +132,7 @@ namespace Scorewarrior.Test.Models
                         {
                             _currentTarget = target;
                             _state = State.Aiming;
-                            _time = _prefab.GetComponent<CharacterDescriptor>().AimTime;
+                            _time = Descriptor.AimTime;
                             _prefab.transform.LookAt(_currentTarget.Position);
                         }
                         break;
@@ -154,9 +167,9 @@ namespace Scorewarrior.Test.Models
                                 if (_weapon.IsReady)
                                 {
                                     float random = UnityEngine.Random.Range(0.0f, 1.0f);
-                                    bool hit = random <= _prefab.GetComponent<CharacterDescriptor>().Accuracy &&
-                                            random <= _weapon.Prefab.GetComponent<WeaponDescriptor>().Accuracy &&
-                                            random >= _currentTarget.Prefab.GetComponent<CharacterDescriptor>().Dexterity;
+                                    bool hit = random <= Descriptor.Accuracy &&
+                                            random <= _weapon.Descriptor.Accuracy &&
+                                            random >= _currentTarget.Descriptor.Dexterity;
                                     _weapon.Fire(_currentTarget, hit);
                                     _prefab.Animator.SetTrigger("shoot");
                                 }
@@ -168,7 +181,7 @@ namespace Scorewarrior.Test.Models
                             else
                             {
                                 _state = State.Reloading;
-                                _time = _weapon.Prefab.GetComponent<WeaponDescriptor>().ReloadTime;
+                                _time = _weapon.Descriptor.ReloadTime;
                             }
                         }
                         else
@@ -179,7 +192,7 @@ namespace Scorewarrior.Test.Models
                     case State.Reloading:
                         _prefab.Animator.SetBool("aiming", true);
                         _prefab.Animator.SetBool("reloading", true);
-                        _prefab.Animator.SetFloat("reload_time", _weapon.Prefab.GetComponent<WeaponDescriptor>().ReloadTime / 3.3f);
+                        _prefab.Animator.SetFloat("reload_time", _weapon.Descriptor.ReloadTime / 3.3f);
                         if (_time > 0)
                         {
                             _time -= deltaTime;

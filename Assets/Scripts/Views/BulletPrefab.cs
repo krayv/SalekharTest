@@ -7,7 +7,7 @@ namespace Scorewarrior.Test.Views
 	public class BulletPrefab : MonoBehaviour
 	{
 		private Character _target;
-		private WeaponPrefab _weapon;
+		private Weapon _weapon;
 		private bool _hit;
 
 		private Vector3 _position;
@@ -15,7 +15,7 @@ namespace Scorewarrior.Test.Views
 		private float _totalDistance;
 		private float _currentDistance;
 
-		public void Init(WeaponPrefab weapon, Character target, bool hit)
+		public void Init(Weapon weapon, Character target, bool hit)
 		{
 			_weapon = weapon;
 			_target = target;
@@ -38,8 +38,7 @@ namespace Scorewarrior.Test.Views
 			{
 				if (_hit)
 				{
-					WeaponDescriptor weaponDescriptor = _weapon.GetComponent<WeaponDescriptor>();
-					CharacterDescriptor targetDescriptor = _target.Prefab.GetComponent<CharacterDescriptor>();
+					WeaponModifiedDescriptor weaponDescriptor = _weapon.Descriptor;
 					float damage = weaponDescriptor.Damage;
 					if (_target.Armor > 0)
 					{

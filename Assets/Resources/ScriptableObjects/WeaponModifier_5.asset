@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c44a93115c744d46b41693c1c41ef09, type: 3}
+  m_Name: WeaponModifier_5
+  m_EditorClassIdentifier: 
+  _damageAddModifier: 0
+  _accuracyAddModifier: 0
+  _fireRateAddModifier: 0
+  _clipSizeAddModifier: 0
+  _reloadAddTime: -0.91
