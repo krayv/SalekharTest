@@ -27,9 +27,10 @@ namespace Scorewarrior.Test.Models
 		public void Start(CharacterPrefab[] prefabs)
 		{
 			_paused = false;
-			_charactersByTeam.Clear();
 
-			foreach (var character in _spawnedCharacters.Values)
+			ClearTeamList();
+
+            foreach (var character in _spawnedCharacters.Values)
 			{
 				character.gameObject.SetActive(false);
 			}
@@ -51,6 +52,7 @@ namespace Scorewarrior.Test.Models
 				_eventBus.SpawnCharacters.Invoke(characters);
 			}
 		}
+		
 
 		public bool TryGetNearestAliveEnemy(Character character, out Character target)
 		{
@@ -116,7 +118,19 @@ namespace Scorewarrior.Test.Models
 			}
 		}
 
-		private void OnNoAliveCharacters(uint team)
+        private void ClearTeamList()
+        {
+            foreach (var team in _charactersByTeam)
+            {
+                foreach (var character in team.Value)
+                {
+                    character.Destroy();
+                }
+            }
+            _charactersByTeam.Clear();
+        }
+
+        private void OnNoAliveCharacters(uint team)
 		{
 			_eventBus.EndBattle.Invoke();
 		}

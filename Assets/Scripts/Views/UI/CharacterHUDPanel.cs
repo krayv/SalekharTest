@@ -27,6 +27,7 @@ namespace Scorewarrior.Test.Views
             character.OnArmorChanged += OnChangeArmor;
             character.OnHealthChanged += OnChangeHealth;
             character.OnCharacterDeath += Unsubscribe;
+            character.OnDestroy += Unsubscribe;
             OnChangeArmor(character.Armor);
             OnChangeHealth(character.Health);
             _healthBar.SetBarColor(character.Team == _playersTeam ? _playerHealthBarColor : _enemyHealthBarColor);
@@ -47,12 +48,18 @@ namespace Scorewarrior.Test.Views
             Unsubscribe();
         }
 
+        private void OnGameRestart()
+        {
+            Unsubscribe();
+        }
+
         private void Unsubscribe()
         {
             OnUnsubscribe?.Invoke(this);
             _character.OnArmorChanged -= OnChangeArmor;
             _character.OnHealthChanged -= OnChangeHealth;
             _character.OnCharacterDeath -= Unsubscribe;
+            _character.OnDestroy -= Unsubscribe;
         }
     } 
 }

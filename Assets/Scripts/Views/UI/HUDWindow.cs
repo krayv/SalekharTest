@@ -52,6 +52,12 @@ namespace Scorewarrior.Test.Views
             return Instantiate(_characterHUDPrefab, transform);
         }
 
+        private void ReleaseHUD(CharacterHUDPanel panel)
+        {
+            _hudPool.Release(panel);
+            panel.OnUnsubscribe -= ReleaseHUD;
+        }
+
         private void OnSpawnCharacters(List<Character> characters)
         {
             foreach (var character in characters)
@@ -59,7 +65,7 @@ namespace Scorewarrior.Test.Views
                 CharacterHUDPanel hud = _hudPool.Get();
                 hud.Subscribe(character);
                 hud.transform.position = (Vector3)_characterHUDOffset + _mainCamera.WorldToScreenPoint(character.Prefab.transform.position);
-                hud.OnUnsubscribe += OnReturnToPool;
+                hud.OnUnsubscribe += ReleaseHUD;
             }
         }
     }

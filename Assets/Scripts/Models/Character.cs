@@ -115,6 +115,7 @@ namespace Scorewarrior.Test.Models
         public Action<float> OnHealthChanged;
         public Action<float> OnArmorChanged;
         public Action OnCharacterDeath;
+        public Action OnDestroy;
 
         public CharacterPrefab Prefab => _prefab;
         public Vector3 Position => _prefab.transform.position;
@@ -213,6 +214,11 @@ namespace Scorewarrior.Test.Models
                         break;
                 }
             }
+        }
+
+        public void Destroy()
+        {
+            OnDestroy?.Invoke();
         }
     }
 }
